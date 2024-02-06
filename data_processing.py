@@ -11,7 +11,7 @@ top_filter = 30
 ### Italy ###
 
 #Adding header entry
-file_path_cases = 'code/data/Italy/italy_labels.csv'
+file_path_cases = 'data/Italy/italy_labels.csv'
 
 with open(file_path_cases, 'r') as f:
     content = f.readlines()
@@ -42,7 +42,7 @@ selected_cities_ita = cases_ita_df['name'].to_numpy(dtype='str')
 ### Spain ###
 
 #Importing CSV
-cases_spa_df = pd.read_csv('code/data/Spain/spain_labels.csv')
+cases_spa_df = pd.read_csv('data/Spain/spain_labels.csv')
 cases_spa_df[cases_spa_df.columns[1:]] = cases_spa_df.iloc[:, 1:].astype('int64')
 
 #Outlier due to mis-reporting
@@ -60,7 +60,7 @@ selected_cities_spa = cases_spa_df['name'].to_numpy(dtype='str')
 ### France ###
 
 #Importing CSV
-cases_fra_df = pd.read_csv('code/data/France/france_labels.csv')
+cases_fra_df = pd.read_csv('data/France/france_labels.csv')
 
 #Selecting subset of cities by quantiles
 #upper_quant_fra = cases_fra_df.iloc[:, 1:].mean(axis=1).quantile(0.8)
@@ -72,7 +72,7 @@ cases_fra_df = cases_fra_df.loc[top_fra]
 selected_cities_fra = cases_fra_df['name'].to_numpy(dtype='str')
 
 ### England ###
-cases_eng_df = pd.read_csv('code/data/England/england_labels.csv')
+cases_eng_df = pd.read_csv('data/England/england_labels.csv')
 
 #Selecting cities by quantiles
 #upper_quant_eng = cases_eng_df.iloc[:, 1:].mean(axis=1).quantile(0.75)
@@ -89,10 +89,10 @@ selected_cities_list = [selected_cities_ita, selected_cities_spa, selected_citie
 cases_dfs_list = [cases_ita_df, cases_spa_df, cases_fra_df, cases_eng_df]
 countries = ['ita', 'spa', 'fra', 'eng']
 folder_path_dict = {
-    'ita' : 'code/data/Italy/graphs',
-    'spa' : 'code/data/Spain/graphs',
-    'fra' : 'code/data/France/graphs',
-    'eng' : 'code/data/England/graphs',
+    'ita' : 'data/Italy/graphs',
+    'spa' : 'data/Spain/graphs',
+    'fra' : 'data/France/graphs',
+    'eng' : 'data/England/graphs',
 }
 movement_dfs_list = []
 
