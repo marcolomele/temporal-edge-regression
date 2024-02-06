@@ -1,2 +1,2 @@
 # Ignore the .venv folder inside the temporal_edge_regression folder
-/temporal_edge_regression/.venv/
+.venv
