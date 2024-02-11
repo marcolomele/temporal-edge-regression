@@ -3,3 +3,4 @@
 
 # Ignore specific Jupyter notebook
 graph_generation.ipynb
+data_processing.ipynb

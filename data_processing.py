@@ -5,6 +5,8 @@ import os
 from datetime import datetime
 import numpy as np
 import seaborn as sns
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
  
 # ## Italy
@@ -158,10 +160,10 @@ selected_cities_spa = np.sort(selected_cities_spa)
 selected_cities_fra = np.sort(selected_cities_fra)
 selected_cities_eng = np.sort(selected_cities_eng)
 
-mapping_ita = {city: i for i, city in enumerate(selected_cities_ita, start=1)}
-mapping_spa = {city: i for i, city in enumerate(selected_cities_spa, start=1)}
-mapping_fra = {city: i for i, city in enumerate(selected_cities_fra, start=1)}
-mapping_eng = {city: i for i, city in enumerate(selected_cities_eng, start=1)}
+mapping_ita = {city: i for i, city in enumerate(selected_cities_ita, start=0)}
+mapping_spa = {city: i for i, city in enumerate(selected_cities_spa, start=0)}
+mapping_fra = {city: i for i, city in enumerate(selected_cities_fra, start=0)}
+mapping_eng = {city: i for i, city in enumerate(selected_cities_eng, start=0)}
 
 movement_ita_df['src'] = movement_ita_df['src'].map(mapping_ita)
 movement_ita_df['trg'] = movement_ita_df['trg'].map(mapping_ita)
