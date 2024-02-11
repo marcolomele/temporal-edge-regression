@@ -1,2 +1,5 @@
 # Ignore the .venv folder inside the temporal_edge_regression folder
 .venv
+
+# Ignore specific Jupyter notebook
+graph_generation.ipynb
