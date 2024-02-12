@@ -1,10 +1,13 @@
-# .venv 
-.venv
+# ds store
+.DS_Store
 
 # Jupyter notebook
 graph_generation.ipynb
 data_processing.ipynb
 
-
 # cache
 __pycache__/
+
+# .venv 
+.venv
+
