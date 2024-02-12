@@ -1,8 +1,8 @@
+#pickle files
+graph_snapshots.picke
+
 #python files
 variable_exporter.py
-
-#pickle files
-graph_snapshots.pickle
 
 #notebooks
 exploration/
