@@ -9,9 +9,9 @@ def generate_dict_graph_snapshots(movement_df, cases_df):
     dates = movement_df['date'].unique()
     snapshots_dict = {}
 
-    for i in range(6,len(dates)):
-        df = movement_df[movement_df['date']==dates[i-6]]
-
+    for i in range(7,len(dates)):
+        df = movement_df[movement_df['date']==dates[i-7]]
+        
         edge_index_arr = np.vstack((df['src'].values, df['trg'].values))
         edge_index = torch.tensor(edge_index_arr, dtype=torch.long)
         edge_weight = torch.tensor(df['movement'].values[:, None], dtype=torch.float)
