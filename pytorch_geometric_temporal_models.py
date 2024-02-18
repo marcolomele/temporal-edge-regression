@@ -295,6 +295,7 @@ class EvolveGCNH(torch.nn.Module):
         X = self.conv_layer(W.squeeze(dim=0), X, edge_index, edge_weight)
         return X
     
+
 ### A3TGCN ###
     
 class TGCN(torch.nn.Module):
@@ -497,3 +498,101 @@ class A3TGCN(torch.nn.Module):
                 X[:, :, period], edge_index, edge_weight, H
             )
         return H_accum
+    
+
+### GATR ##
+
+from torch_geometric.nn import GATv2Conv
+from torch_geometric.nn import PositionalEncoding
+from torch_geometric.nn import BatchNorm
+from torch.nn import Transformer
+
+class GATEncoder(torch.nn.Module):
+    """
+    GNN Encoder module for creating static node embeddings.
+
+    Args:
+        hidden_channels (int): The number of hidden channels.
+        num_heads_GAT (int): The number of attention heads.
+        dropout_p (float): Dropout probability.
+        edge_dim (int): Dimensionality of edge features.
+    """
+
+    def __init__(self, in_channels, hidden_channels, num_heads_GAT,
+                 dropout_p, edge_dim, momentum_GAT):
+
+        super(GATEncoder, self).__init__()
+
+        self.encoder = GATv2Conv(in_channels=in_channels, out_channels=hidden_channels,
+                              add_self_loops=False, heads=num_heads_GAT,
+                              edge_dim=edge_dim)
+        
+        self.norm = BatchNorm(hidden_channels, momentum=momentum_GAT,
+                               affine=False, track_running_stats=False)
+
+        self.dropout = torch.nn.Dropout(dropout_p)
+
+    def forward(self, x, edge_index, edge_attrs):
+        """
+        Forward pass of the GNNEncoder.
+
+        Args:
+            x_dict (torch.Tensor): node types as keys and node features
+                                   for each node as values.
+            edge_index (torch.Tensor): see previous section.
+            edge_attrs (torch.Tensor): see previous section.
+
+        Returns:
+            torch.Tensor: Static node embeddings for one snapshot.
+        """
+        x = self.dropout(x)
+        nodes_embedds = self.encoder(x, edge_index, edge_attrs)
+        nodes_embedds = F.leaky_relu(nodes_embedds, negative_slope=0.1)
+        return nodes_embedds
+    
+class TransEncoder(torch.nn.Module):
+    """
+    Transformer-based module for creating temporal node embeddings.
+
+    Args:
+        dim_model (int): The dimension of the model's hidden states.
+        num_heads_TR (int): The number of attention heads.
+        num_encoder_layers_TR (int): The number of encoder layers.
+        num_decoder_layers_TR (int): The number of decoder layers.
+        dropout_p_TR (float): Dropout probability.
+    """
+
+    def __init__(
+        self, dim_model, num_heads_TR, num_encoder_layers_TR,
+        num_decoder_layers_TR, dropout_p_GAT):
+
+        super(TransEncoder, self).__init__()
+
+        self.pos_encoder = PositionalEncoding(dim_model)
+        self.transformer = Transformer(
+            d_model=dim_model,
+            nhead=num_heads_TR,
+            num_decoder_layers=num_encoder_layers_TR,
+            num_encoder_layers=num_decoder_layers_TR,
+            dropout=dropout_p_GAT,
+            batch_first=True)
+
+    def forward(self, src, trg):
+        """
+        Forward pass of the Transformer module.
+
+        Args:
+            src (torch.Tensor): Input sequence with dimensions
+                                (seq_len, num_of_nodes, node_embedds_size).
+            trg (torch.Tensor): Last element of src, with dimensions
+                                (1, num_of_nodes, node_embedds_size).
+
+        Returns:
+            torch.Tensor: Temporal node embeddings for the snapshot
+                          under prediciton.
+        """
+        src = self.pos_encoder(src)
+        trg = self.pos_encoder(trg)
+        temporal_node_embeddings = self.transformer(src, trg)
+
+        return temporal_node_embeddings

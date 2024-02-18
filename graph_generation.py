@@ -14,15 +14,15 @@ def generate_dict_graph_snapshots(movement_df, cases_df):
         
         edge_index_arr = np.vstack((df['src'].values, df['trg'].values))
         edge_index = torch.tensor(edge_index_arr, dtype=torch.long)
-        edge_weight = torch.tensor(df['movement'].values[:, None], dtype=torch.float)
-        edge_weight_index = edge_index.detach().clone()
+        edge_weights = torch.tensor(df['movement'].values[:, None], dtype=torch.float)
+        edge_weights_index = edge_index.detach().clone()
         edge_attr = torch.tensor(df['positive_freq'].values[:, None], dtype=torch.float)
         num_nodes = df['src'].max()
         
         node_features = torch.tensor(cases_df.iloc[:, i-6:i+1].values, dtype=torch.float)
         
-        graph = Data(x=node_features, edge_index=edge_index, edge_weight=edge_weight, 
-                     edge_weight_index=edge_weight_index, edge_attr=edge_attr, num_nodes=num_nodes)
+        graph = Data(x=node_features, edge_index=edge_index, edge_weights=edge_weights, 
+                     edge_weights_index=edge_weights_index, edge_attr=edge_attr, num_nodes=num_nodes)
 
         snapshots_dict[dates[i]] = graph
         
