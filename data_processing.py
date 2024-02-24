@@ -191,3 +191,17 @@ movement_ita_df['movement'] = np.log(movement_ita_df['movement'].values + 1)
 movement_spa_df['movement'] = np.log(movement_spa_df['movement'].values + 1)
 movement_fra_df['movement'] = np.log(movement_fra_df['movement'].values + 1)
 movement_eng_df['movement'] = np.log(movement_eng_df['movement'].values + 1)
+
+## Saving for import
+movement_dfs_dict = {
+    'movement_ita_df' : movement_ita_df,
+    'movement_spa_df' : movement_spa_df,
+    'movement_fra_df' : movement_fra_df,
+    'movement_eng_df' : movement_eng_df
+}
+cases_dfs_dict = {
+    'cases_ita_df' : cases_ita_df,
+    'cases_spa_df' : cases_spa_df,
+    'cases_fra_df' : cases_fra_df,
+    'cases_eng_df' : cases_eng_df
+}
