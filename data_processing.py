@@ -150,7 +150,7 @@ movement_fra_df, cases_fra_df = indexing_data(movement_fra_df, cases_fra_df, map
 movement_eng_df, cases_eng_df = indexing_data(movement_eng_df, cases_eng_df, mapping_eng)
 
 
-## Connecting
+## Engineering
 # Function for generating fully connected dataframes for fully connected graphs. 
 def generate_df_connected_movement(movement_df):
     dates = movement_df['date'].unique()
@@ -166,6 +166,7 @@ movement_spa_df = generate_df_connected_movement(movement_spa_df)
 movement_fra_df = generate_df_connected_movement(movement_fra_df)
 movement_eng_df = generate_df_connected_movement(movement_eng_df)
 
+# Function for adding edge feature with frequency.
 def calc_positive_edge_freq(movement_df):
     movement_df['is_positive'] = movement_df['movement'] > 0
     movement_df['cumsum_positive'] = movement_df.groupby(['src', 'trg'])['is_positive'].cumsum()
@@ -180,8 +181,7 @@ movement_spa_df = calc_positive_edge_freq(movement_spa_df)
 movement_fra_df = calc_positive_edge_freq(movement_fra_df)
 movement_eng_df = calc_positive_edge_freq(movement_eng_df) 
 
-
-## Normalising
+# Normalising data. 
 cases_ita_df.iloc[:, 1:] = np.log(cases_ita_df.iloc[:, 1:]+1)
 cases_spa_df.iloc[:, 1:] = np.log(cases_spa_df.iloc[:, 1:]+1)
 cases_fra_df.iloc[:, 1:] = np.log(cases_fra_df.iloc[:, 1:]+1)

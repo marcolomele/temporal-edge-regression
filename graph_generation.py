@@ -1,7 +1,6 @@
 from data_processing import movement_ita_df, movement_spa_df, movement_fra_df, movement_eng_df
 from data_processing import cases_ita_df, cases_spa_df, cases_fra_df, cases_eng_df
-import pandas as pd
-from torch_geometric.data import Data
+from torch_geometric.data import Data, TemporalData
 import torch
 import numpy as np
 
@@ -17,7 +16,7 @@ def generate_dict_graph_snapshots(movement_df, cases_df):
         edge_weights = torch.tensor(df['movement'].values[:, None], dtype=torch.float)
         edge_weights_index = edge_index.detach().clone()
         edge_attr = torch.tensor(df['positive_freq'].values[:, None], dtype=torch.float)
-        num_nodes = df['src'].max()
+        num_nodes = df['src'].max() + 1
         
         node_features = torch.tensor(cases_df.iloc[:, i-6:i+1].values, dtype=torch.float)
         
@@ -33,3 +32,23 @@ daily_graphs_ita_dict = generate_dict_graph_snapshots(movement_ita_df, cases_ita
 daily_graphs_spa_dict = generate_dict_graph_snapshots(movement_spa_df, cases_spa_df)
 daily_graphs_fra_dict = generate_dict_graph_snapshots(movement_fra_df, cases_fra_df)
 daily_graphs_eng_dict = generate_dict_graph_snapshots(movement_eng_df, cases_eng_df)
+
+#Generaiton of temporal data (not fully conencted)
+def generate_temporal_data(movement_df):
+    movement_df = movement_df[movement_df['movement'] > 0].copy()
+    src = torch.tensor(movement_df['src'].values, dtype=torch.long)
+    trg = torch.tensor(movement_df['trg'].values, dtype=torch.long)
+    msg = torch.tensor(movement_df['movement'].values, dtype=torch.float)
+    
+    movement_df['date'] = movement_df['date'].astype('datetime64[s]').astype('int')
+    dates_mapping = {date: i for i, date in enumerate(movement_df['date'].unique())}
+    movement_df['date'] = movement_df['date'].map(dates_mapping)
+    t = torch.tensor(movement_df['date'].values, dtype=torch.int)
+
+    return TemporalData(src=src, dst=trg, t=t, msg=msg)
+
+#TemporalData objects
+temporal_data_ita = generate_temporal_data(movement_ita_df)
+temporal_data_spa = generate_temporal_data(movement_spa_df)
+temporal_data_fra = generate_temporal_data(movement_fra_df)
+temporal_data_eng = generate_temporal_data(movement_eng_df)
