@@ -68,28 +68,33 @@ def generate_temporal_data(movement_df, cases_df):
     
     src = torch.tensor(movement_df['src'].values, dtype=torch.long)
     trg = torch.tensor(movement_df['trg'].values, dtype=torch.long)
-    msg = torch.tensor(movement_df['movement_lag7'].values, dtype=torch.float32).unsqueeze(1)
+    edge_weights = torch.tensor(movement_df['movement_lag7'].values, dtype=torch.float32).unsqueeze(1)
+    msg = torch.ones_like(edge_weights)
     
     movement_df['date'] = movement_df['date'].astype('datetime64[s]').astype('int')
     dates_mapping = {date: i for i, date in enumerate(movement_df['date'].unique())}
     movement_df['date'] = movement_df['date'].map(dates_mapping)
     t = torch.tensor(movement_df['date'].values, dtype=torch.int64)
 
-    return TemporalData(src=src, dst=trg, t=t, msg=msg), node_features
+    return TemporalData(src=src, dst=trg, t=t, msg=msg), node_features, edge_weights
 
 #TemporalData objects
-data, features = generate_temporal_data(movement_ita_df, cases_ita_df)
+data, node_features, edge_weights = generate_temporal_data(movement_ita_df, cases_ita_df)
 temporal_data_ita = {'TemporalData':data, 
-                     'node_features':features}
+                     'node_features':node_features,
+                     'edge_weights': edge_weights}
 
-data, features = generate_temporal_data(movement_spa_df, cases_spa_df)
+data, node_features, edge_weights = generate_temporal_data(movement_spa_df, cases_ita_df)
 temporal_data_spa = {'TemporalData':data, 
-                     'node_features':features}
+                     'node_features':node_features,
+                     'edge_weights': edge_weights}
 
-data, features = generate_temporal_data(movement_fra_df, cases_fra_df)
+data, node_features, edge_weights = generate_temporal_data(movement_fra_df, cases_ita_df)
 temporal_data_fra = {'TemporalData':data, 
-                     'node_features':features}
+                     'node_features':node_features,
+                     'edge_weights': edge_weights}
 
-data, features = generate_temporal_data(movement_eng_df, cases_eng_df)
+data, node_features, edge_weights = generate_temporal_data(movement_eng_df, cases_ita_df)
 temporal_data_eng = {'TemporalData':data, 
-                     'node_features':features}
+                     'node_features':node_features,
+                     'edge_weights': edge_weights}
