@@ -57,11 +57,11 @@ def generate_temporal_data(movement_df, cases_df):
     movement_df = generate_td_movement_df(movement_df)
     dates = movement_df['date'].unique()
     
-    node_features = []
+    node_features_list = []
     for i in range(7, len(dates)):
         x = torch.tensor(cases_df.iloc[:, i-6:i+1].values, dtype=torch.float)
-        node_features.append(x)
-    node_features = torch.stack(node_features)
+        node_features_list.append(x)
+    node_features = {i:features for i, features, in enumerate(node_features_list)}
 
     dates = dates[:cases_df.iloc[:, 8:].shape[1]]
     movement_df = movement_df[movement_df['date'].isin(dates)]
@@ -75,10 +75,21 @@ def generate_temporal_data(movement_df, cases_df):
     movement_df['date'] = movement_df['date'].map(dates_mapping)
     t = torch.tensor(movement_df['date'].values, dtype=torch.int64)
 
-    return TemporalData(src=src, dst=trg, t=t, msg=msg, node_features=node_features)
+    return TemporalData(src=src, dst=trg, t=t, msg=msg), node_features
 
 #TemporalData objects
-temporal_data_ita = generate_temporal_data(movement_ita_df, cases_ita_df)
-temporal_data_spa = generate_temporal_data(movement_spa_df, cases_spa_df)
-temporal_data_fra = generate_temporal_data(movement_fra_df, cases_fra_df)
-temporal_data_eng = generate_temporal_data(movement_eng_df, cases_eng_df)
+data, features = generate_temporal_data(movement_ita_df, cases_ita_df)
+temporal_data_ita = {'TemporalData':data, 
+                     'node_features':features}
+
+data, features = generate_temporal_data(movement_spa_df, cases_spa_df)
+temporal_data_spa = {'TemporalData':data, 
+                     'node_features':features}
+
+data, features = generate_temporal_data(movement_fra_df, cases_fra_df)
+temporal_data_fra = {'TemporalData':data, 
+                     'node_features':features}
+
+data, features = generate_temporal_data(movement_eng_df, cases_eng_df)
+temporal_data_eng = {'TemporalData':data, 
+                     'node_features':features}
