@@ -6,37 +6,45 @@ import pandas as pd
 import torch
 
 ## Utils
-def data_split(graph_snapshots, perc_split):
-    split_at = int(len(graph_snapshots) * (1-perc_split))
+def data_split(graph_snapshots, test_ratio):
+    '''
+    [Draft]
+
+    Args:
+        graph_snapshots (list): list of graph snapshots as PyG Data objects. 
+        test_ratio (float): proportion of sequence kept for testing. 
+    '''
+    split_at = int(len(graph_snapshots) * (1-test_ratio))
     return graph_snapshots[:split_at], graph_snapshots[split_at:]
 
 def apply_negative_sampling(snapshot, all_possible_edges, ratio=1):
-    #print('Note: use unconnected graph snapshots for this.')
+    if (snapshot.edge_weights == 0).any():
+        return print('Note: use unconnected graph snapshots to use negative sampling.')
+     
+    else:
+        edge_index = snapshot.edge_index.t()
+        expanded_all_edges = all_possible_edges.unsqueeze(1) 
+        edge_comparisons = (expanded_all_edges == edge_index).all(dim=2)
+        mask = ~edge_comparisons.any(dim=1)
 
-    edge_index = snapshot.edge_index.t()
-    expanded_all_edges = all_possible_edges.unsqueeze(1) 
-    edge_comparisons = (expanded_all_edges == edge_index).all(dim=2)
-    mask = ~edge_comparisons.any(dim=1)
-    negative_edges = all_possible_edges[mask]
+        negative_edges = all_possible_edges[mask]
+        num_to_sample = round(edge_index.shape[0] * ratio)
+        sampled_indices = torch.randperm(negative_edges.shape[0])[:num_to_sample]
+        sampled_negative_edges = negative_edges[sampled_indices]
 
-    negative_edges = all_possible_edges[mask]
-    num_to_sample = round(edge_index.shape[0] * ratio)
-    sampled_indices = torch.randperm(negative_edges.shape[0])[:num_to_sample]
-    sampled_negative_edges = negative_edges[sampled_indices]
+        edge_index = torch.cat((edge_index, sampled_negative_edges), dim=0).t()
+        edge_weights = torch.cat((snapshot.edge_weights, torch.zeros((num_to_sample,1))), dim=0)
 
-    edge_index = torch.cat((edge_index, sampled_negative_edges), dim=0).t()
-    edge_weights = torch.cat((snapshot.edge_weights, torch.zeros((num_to_sample,1))), dim=0)
-
-    new_snapshot = snapshot.clone()
-    new_snapshot.edge_index = edge_index
-    new_snapshot.edge_weights_index = edge_index  
-    new_snapshot.edge_weights = edge_weights  
+        new_snapshot = snapshot.clone()
+        new_snapshot.edge_index = edge_index
+        new_snapshot.edge_weights_index = edge_index  
+        new_snapshot.edge_weights = edge_weights  
 
     return new_snapshot
 
-def train(model, graph_snapshots_train, optimiser, epochs, neg_sampling=False):
+def train_snapshots(model, graph_snapshots_train, optimiser, epochs, neg_sampling=False):
     model.train()
-    loss_epochs_df = pd.DataFrame(columns=['epoch', 'loss'])
+    loss_epochs_dict = {}
     for epoch in tqdm(range(epochs)):
         losses_list = []
         for snapshot in graph_snapshots_train:
@@ -50,13 +58,12 @@ def train(model, graph_snapshots_train, optimiser, epochs, neg_sampling=False):
             losses_list.append(loss.item())
             optimiser.step()
             optimiser.zero_grad()
-        
         avg_epoch_loss = mean(losses_list)
-        loss_epochs_df.loc[len(loss_epochs_df)]={'epoch':epoch+1, 'loss':avg_epoch_loss}
-
+        loss_epochs_dict[epoch+1] = avg_epoch_loss 
+    loss_epochs_df = pd.DataFrame(loss_epochs_dict.items(), columns=['epoch', 'loss'])
     return loss_epochs_df
 
-def test(model, graph_snapshots_test, neg_sampling=False):
+def test_snapshots(model, graph_snapshots_test, neg_sampling=False):
     model.eval()
     loss = 0
     for snapshot in graph_snapshots_test:
@@ -110,6 +117,18 @@ class EncoderMPNN(torch.nn.Module):
         return node_embeddings # size '2*nhid+in_channels+window-1' for each node.
 
 class ModelMPNN(torch.nn.Module):
+
+    '''
+    [Draft] Encoder-decoder module for edge regression based on MPNNLSTM. 
+    
+    Args:
+        in_channels (int): number of features per node.
+        hidden_size (int): embedding size. 
+        num_nodes (int): number of nodes in input snapshot.
+        window (int): window of events.
+        dropout_p (float): dropout probability.
+    '''
+
     def __init__(self, in_channels, hidden_size, num_nodes,
                  window, dropout_p):
         
