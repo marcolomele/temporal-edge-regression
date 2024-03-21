@@ -73,7 +73,7 @@ snapshots_graphs_unco_spa_dict = generate_dict_graph_snapshots_unco(movement_spa
 snapshots_graphs_unco_fra_dict = generate_dict_graph_snapshots_unco(movement_fra_df, cases_fra_df)
 snapshots_graphs_unco_eng_dict = generate_dict_graph_snapshots_unco(movement_eng_df, cases_eng_df)
 
-#Generaiton of temporal data (not fully conencted)
+#Generation of temporal data (for not fully conencted data only)
 def generate_td_movement_df(movement_df):
     movement_df = movement_df[movement_df['movement']>0].copy()
     movement_df = movement_df.reset_index(drop=True)

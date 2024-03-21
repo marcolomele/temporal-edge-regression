@@ -1,3 +1,5 @@
+data_processing_trade.ipynb
+data_processing_pandemic.ipynb
 data_trade
 train_test.ipynb
 tgn_example.ipynb
@@ -18,7 +20,6 @@ exploration/
 
 # Jupyter notebook
 graph_generation.ipynb
-data_processing.ipynb
 
 # cache
 __pycache__/
