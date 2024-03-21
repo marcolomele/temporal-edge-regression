@@ -1,4 +1,4 @@
-from data_processing import movement_dfs_dict, cases_dfs_dict
+from data_processing_pandemic import movement_dfs_dict, cases_dfs_dict
 from torch_geometric.data import Data, TemporalData
 import torch
 import numpy as np
