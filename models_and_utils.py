@@ -17,7 +17,7 @@ def data_split(graph_snapshots, test_ratio):
     split_at = int(len(graph_snapshots) * (1-test_ratio))
     return graph_snapshots[:split_at], graph_snapshots[split_at:]
 
-def apply_negative_sampling(snapshot, all_possible_edges, rate):
+def apply_negative_sampling(snapshot, all_possible_edges, ratio):
     if (snapshot.edge_weights == 0).any():
         return print('Note: use unconnected graph snapshots to use negative sampling.')
      
@@ -28,7 +28,7 @@ def apply_negative_sampling(snapshot, all_possible_edges, rate):
         mask = ~edge_comparisons.any(dim=1)
 
         negative_edges = all_possible_edges[mask]
-        num_to_sample = round(edge_index.shape[0] * rate)
+        num_to_sample = round(edge_index.shape[0] * ratio)
         sampled_indices = torch.randperm(negative_edges.shape[0])[:num_to_sample]
         sampled_negative_edges = negative_edges[sampled_indices]
 
@@ -42,16 +42,16 @@ def apply_negative_sampling(snapshot, all_possible_edges, rate):
 
     return new_snapshot
 
-def train_snapshots(model, graph_snapshots_train, optimiser, epochs, neg_sampling_rate=0):
+def train_snapshots(model, graph_snapshots_train, optimiser, epochs, neg_sampling_ratio=0.0):
     model.train()
     loss_epochs_dict = {}
     for epoch in tqdm(range(epochs)):
         losses_list = []
         for snapshot in graph_snapshots_train:
-            if neg_sampling_rate>0:
+            if neg_sampling_ratio>0:
                 nodes = torch.arange(snapshot.num_nodes)
                 all_possible_edges = torch.cartesian_prod(nodes, nodes)
-                snapshot = apply_negative_sampling(snapshot, all_possible_edges, ratio=neg_sampling_rate)
+                snapshot = apply_negative_sampling(snapshot, all_possible_edges, ratio=neg_sampling_ratio)
             edge_weights_pred = model(snapshot)
             loss = torch.mean((edge_weights_pred - snapshot.edge_weights)**2)
             loss.backward()

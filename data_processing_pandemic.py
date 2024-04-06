@@ -13,7 +13,7 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 ## Italy
 
 #Adding header
-file_path_cases = 'data/Italy/italy_labels.csv'
+file_path_cases = 'data_pandemic/Italy/italy_labels.csv'
 
 with open(file_path_cases, 'r') as f:
     content = f.readlines()
@@ -42,7 +42,7 @@ selected_cities_ita = cases_ita_df['name'].to_numpy(dtype='str')
 
  
 ## Spain
-cases_spa_df = pd.read_csv('data/Spain/spain_labels.csv')
+cases_spa_df = pd.read_csv('data_pandemic/Spain/spain_labels.csv')
 cases_spa_df[cases_spa_df.columns[1:]] = cases_spa_df.iloc[:, 1:].astype('float64')
 
 #Outlier due to mis-reporting
@@ -55,7 +55,7 @@ selected_cities_spa = cases_spa_df['name'].to_numpy(dtype='str')
 
 
 ## France
-cases_fra_df = pd.read_csv('data/France/france_labels.csv')
+cases_fra_df = pd.read_csv('data_pandemic/France/france_labels.csv')
 cases_fra_df[cases_fra_df.columns[1:]] = cases_fra_df.iloc[:, 1:].astype('float64')
 
 #Selecting cities by absolute number of cases
@@ -65,7 +65,7 @@ selected_cities_fra = cases_fra_df['name'].to_numpy(dtype='str')
 
  
 ## England
-cases_eng_df = pd.read_csv('data/England/england_labels.csv')
+cases_eng_df = pd.read_csv('data_pandemic/England/england_labels.csv')
 cases_eng_df[cases_eng_df.columns[1:]] = cases_eng_df.iloc[:, 1:].astype('float64')
 
 #Selecting subset of cities by absolute value
@@ -79,10 +79,10 @@ selected_cities_list = [selected_cities_ita, selected_cities_spa, selected_citie
 cases_dfs_list = [cases_ita_df, cases_spa_df, cases_fra_df, cases_eng_df]
 countries = ['ita', 'spa', 'fra', 'eng']
 folder_path_dict = {
-    'ita' : 'data/Italy/graphs',
-    'spa' : 'data/Spain/graphs',
-    'fra' : 'data/France/graphs',
-    'eng' : 'data/England/graphs',
+    'ita' : 'data_pandemic/Italy/graphs',
+    'spa' : 'data_pandemic/Spain/graphs',
+    'fra' : 'data_pandemic/France/graphs',
+    'eng' : 'data_pandemic/England/graphs',
 }
 movement_dfs_list = []
 
