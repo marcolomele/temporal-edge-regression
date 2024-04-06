@@ -1,7 +1,7 @@
 data_processing_trade.ipynb
 data_processing_pandemic.ipynb
 data_trade
-train_test.ipynb
+train_test_pandemic.ipynb
 tgn_example.ipynb
 tgn_example.py
 models.ipynb
@@ -20,7 +20,7 @@ graph_generation.ipynb
 
 # cache
 __pycache__/
-
+__pycache__
 # .venv 
 .venv
 
