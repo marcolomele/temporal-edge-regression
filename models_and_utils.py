@@ -6,15 +6,15 @@ import pandas as pd
 import torch
 
 ## Utils
-def data_split(graph_snapshots, test_ratio):
+def data_split(graph_snapshots, split_ratio):
     '''
     [Draft]
 
     Args:
         graph_snapshots (list): list of graph snapshots as PyG Data objects. 
-        test_ratio (float): proportion of sequence kept for testing. 
+        split_ratio (float): proportion of sequence kept for testing. 
     '''
-    split_at = int(len(graph_snapshots) * (1-test_ratio))
+    split_at = int(len(graph_snapshots) * (split_ratio))
     return graph_snapshots[:split_at], graph_snapshots[split_at:]
 
 def apply_negative_sampling(snapshot, all_possible_edges, ratio):
@@ -63,6 +63,7 @@ def train_snapshots(model, graph_snapshots_train, optimiser, epochs, neg_samplin
     loss_epochs_df = pd.DataFrame(loss_epochs_dict.items(), columns=['epoch', 'loss'])
     return loss_epochs_df
 
+@torch.no_grad()
 def test_snapshots(model, graph_snapshots_test, neg_sampling=False):
     model.eval()
     loss = 0
@@ -146,7 +147,7 @@ class ModelMPNN(torch.nn.Module):
     def forward(self, snapshot):
         x = snapshot.x
         edge_index = snapshot.edge_index
-        edge_attr = snapshot.edge_attr
+        edge_attr = snapshot.edge_weights
         edge_weights_index = snapshot.edge_weights_index
 
         node_embeddings = self.encoder(x, edge_index, edge_attr)
@@ -189,7 +190,7 @@ class ModelEVOLVE(torch.nn.Module):
     def forward(self, snapshot):
         x = snapshot.x
         edge_index = snapshot.edge_index
-        edge_attr = snapshot.edge_attr
+        edge_attr = snapshot.edge_weights
         edge_weights_index = snapshot.edge_weights_index
 
         node_embeddings = self.encoder(x, edge_index, edge_attr)
@@ -230,7 +231,7 @@ class ModelA3TGCN(torch.nn.Module):
     def forward(self, snapshot):
         x = snapshot.x.unsqueeze(2)
         edge_index = snapshot.edge_index
-        edge_attr = snapshot.edge_attr
+        edge_attr = snapshot.edge_weights
         edge_weights_index = snapshot.edge_weights_index
 
         node_embeddings = self.encoder(x, edge_index, edge_attr)
