@@ -63,20 +63,16 @@ def train_snapshots(model, graph_snapshots_train, optimiser, epochs, neg_samplin
     loss_epochs_df = pd.DataFrame(loss_epochs_dict.items(), columns=['epoch', 'loss'])
     return loss_epochs_df
 
-@torch.no_grad()
-def test_snapshots(model, graph_snapshots_test, neg_sampling=False):
-    model.eval()
-    loss = 0
-    for snapshot in graph_snapshots_test:
-        if neg_sampling:
-                nodes = torch.arange(snapshot.num_nodes)
-                all_possible_edges = torch.cartesian_prod(nodes, nodes)
-                snapshot = apply_negative_sampling(snapshot, all_possible_edges)
-        edge_weights_pred = model(snapshot)
-        mse = torch.mean((edge_weights_pred - snapshot.edge_weights)**2)
-        loss += mse
-    loss = loss / (len(graph_snapshots_test))
-    print(f'MSE = {loss.item():.4f}')
+def test_snapshots(model, graph_snapshots_test):
+    with torch.no_grad():
+        model.eval()
+        loss = 0
+        for snapshot in graph_snapshots_test:
+            edge_weights_pred = model(snapshot)
+            mse = torch.mean((edge_weights_pred - snapshot.edge_weights)**2)
+            loss += mse
+        loss = loss / (len(graph_snapshots_test))
+        print(f'MSE = {loss.item():.4f}')
 
 ## Models
 class EdgeDecoder(torch.nn.Module):
@@ -89,14 +85,13 @@ class EdgeDecoder(torch.nn.Module):
 
     def forward(self, node_embeddings, edge_weights_index):
         src = edge_weights_index[0, :]
-        trg = edge_weights_index[1, :]
+        dst = edge_weights_index[1, :]
 
-        edge_embeddings = torch.cat([node_embeddings[src], node_embeddings[trg]], dim=1)
-
+        edge_embeddings = torch.cat([node_embeddings[src], node_embeddings[dst]], dim=1)
         h = self.lin1(edge_embeddings)
         h = F.relu(h)
-        prediction = self.lin2(h)
-        return prediction.view(-1)
+        h = self.lin2(h)
+        return h.view(-1)
 
 # MPNN LSTM
 from pytorch_geometric_temporal_models import MPNNLSTM
@@ -113,8 +108,8 @@ class EncoderMPNN(torch.nn.Module):
                              window=window,
                              dropout=dropout_p)
 
-    def forward(self, x, edge_index, edge_attr):
-        node_embeddings = self.MPNN(x, edge_index, edge_attr)
+    def forward(self, x, edge_index):
+        node_embeddings = self.MPNN(x, edge_index)
         return node_embeddings # size '2*nhid+in_channels+window-1' for each node.
 
 class ModelMPNN(torch.nn.Module):
@@ -147,10 +142,9 @@ class ModelMPNN(torch.nn.Module):
     def forward(self, snapshot):
         x = snapshot.x
         edge_index = snapshot.edge_index
-        edge_attr = snapshot.edge_weights
         edge_weights_index = snapshot.edge_weights_index
 
-        node_embeddings = self.encoder(x, edge_index, edge_attr)
+        node_embeddings = self.encoder(x, edge_index)
         edge_weights_pred = self.decoder(node_embeddings, edge_weights_index)
         
         return edge_weights_pred
@@ -173,9 +167,9 @@ class EncoderEVOLVEGCNH(torch.nn.Module):
 
         self.dropout = Dropout(p=dropout_p)
 
-    def forward(self, x, edge_index, edge_attr):
+    def forward(self, x, edge_index):
         x = self.dropout(x)
-        node_embeddings=self.EVOLVEGCNH(x, edge_index, edge_attr)
+        node_embeddings=self.EVOLVEGCNH(x, edge_index)
         return node_embeddings
 
 class ModelEVOLVE(torch.nn.Module):
@@ -190,10 +184,9 @@ class ModelEVOLVE(torch.nn.Module):
     def forward(self, snapshot):
         x = snapshot.x
         edge_index = snapshot.edge_index
-        edge_attr = snapshot.edge_weights
         edge_weights_index = snapshot.edge_weights_index
 
-        node_embeddings = self.encoder(x, edge_index, edge_attr)
+        node_embeddings = self.encoder(x, edge_index)
         edge_weights_pred = self.decoder(node_embeddings, edge_weights_index)
         
         return edge_weights_pred
@@ -214,9 +207,9 @@ class EncoderA3TGCN(torch.nn.Module):
 
         self.dropout = Dropout(p=dropout_p)
 
-    def forward(self, x, edge_index, edge_attr):
+    def forward(self, x, edge_index):
         x = self.dropout(x)
-        node_embeddings = self.A3TGCN(x, edge_index, edge_attr)
+        node_embeddings = self.A3TGCN(x, edge_index)
         return node_embeddings
 
 class ModelA3TGCN(torch.nn.Module):
@@ -231,15 +224,15 @@ class ModelA3TGCN(torch.nn.Module):
     def forward(self, snapshot):
         x = snapshot.x.unsqueeze(2)
         edge_index = snapshot.edge_index
-        edge_attr = snapshot.edge_weights
         edge_weights_index = snapshot.edge_weights_index
 
-        node_embeddings = self.encoder(x, edge_index, edge_attr)
+        node_embeddings = self.encoder(x, edge_index)
+        print(node_embeddings)
         edge_weights_pred = self.decoder(node_embeddings, edge_weights_index)
         
         return edge_weights_pred
 
-## GATR
+## GATR - fix edge attribute passed in forward.
 from pytorch_geometric_temporal_models import GATEncoder, TransEncoder
 
 class ModelGATR(torch.nn.Module):
@@ -278,9 +271,9 @@ class ModelGATR(torch.nn.Module):
 
         lagged_static_embeddings = torch.stack(static_embeddings_list)
         src = lagged_static_embeddings
-        trg = lagged_static_embeddings[3]
-        trg = trg.unsqueeze(0)
-        temp_embeddings = self.transformer(src, trg)
+        dst = lagged_static_embeddings[3]
+        dst = dst.unsqueeze(0)
+        temp_embeddings = self.transformer(src, dst)
         temp_embeddings = temp_embeddings.squeeze(0)
 
         edge_weights_pred = self.decoder(temp_embeddings, edge_weights_index)
@@ -416,7 +409,6 @@ def TGN_train(memory, encoder, decoder, neighbor_loader,
 
     return total_loss / train_data.num_events
 
-@torch.no_grad()
 def TGN_test(memory, encoder, decoder, neighbor_loader, 
               test_loader, node_features, edge_weights, 
               optimizer, device, assoc, data, test_data):
@@ -425,36 +417,36 @@ def TGN_test(memory, encoder, decoder, neighbor_loader,
     decoder.eval()
 
     torch.manual_seed(12345)
+    with torch.no_grad():
+        total_loss = 0
+        for batch in test_loader:
+            optimizer.zero_grad()
+            batch = batch.to(device)
 
-    total_loss = 0
-    for batch in test_loader:
-        optimizer.zero_grad()
-        batch = batch.to(device)
+            n_id, edge_index, e_id = neighbor_loader(batch.n_id)
+            assoc[n_id] = torch.arange(n_id.size(0), device=device)
 
-        n_id, edge_index, e_id = neighbor_loader(batch.n_id)
-        assoc[n_id] = torch.arange(n_id.size(0), device=device)
+            z, last_update = memory(n_id)
+            node_features_batch = torch.stack([node_features[last_update[i].item()][i] 
+                                            for i in range(len(last_update))])
+            
+            z = encoder(z, last_update, edge_index, data.t[e_id].to(device),
+                        data.msg[e_id].to(device), node_features_batch)
+            
+            edge_embeddings_pos = torch.cat([z[assoc[batch.src]],  z[assoc[batch.dst]]], dim = 1)
+            edge_embeddings_neg = torch.cat([z[assoc[batch.src]],  z[assoc[batch.dst]]], dim = 1)
 
-        z, last_update = memory(n_id)
-        node_features_batch = torch.stack([node_features[last_update[i].item()][i] 
-                                           for i in range(len(last_update))])
-        
-        z = encoder(z, last_update, edge_index, data.t[e_id].to(device),
-                    data.msg[e_id].to(device), node_features_batch)
-        
-        edge_embeddings_pos = torch.cat([z[assoc[batch.src]],  z[assoc[batch.dst]]], dim = 1)
-        edge_embeddings_neg = torch.cat([z[assoc[batch.src]],  z[assoc[batch.dst]]], dim = 1)
+            pos_out = decoder(edge_embeddings_pos)
+            neg_out = decoder(edge_embeddings_neg)
+                    
+            if e_id.nelement() != 0:
+                loss = torch.mean((pos_out - edge_weights[e_id])**2)
+            else:
+                loss = 0.0
 
-        pos_out = decoder(edge_embeddings_pos)
-        neg_out = decoder(edge_embeddings_neg)
-                
-        if e_id.nelement() != 0:
-            loss = torch.mean((pos_out - edge_weights[e_id])**2)
-        else:
-            loss = 0.0
-
-        loss += torch.mean((neg_out - torch.zeros_like(neg_out))**2)
-        memory.update_state(batch.src, batch.dst, batch.t, batch.msg)
-        neighbor_loader.insert(batch.src, batch.dst)
-        total_loss += float(loss) * batch.num_events
+            loss += torch.mean((neg_out - torch.zeros_like(neg_out))**2)
+            memory.update_state(batch.src, batch.dst, batch.t, batch.msg)
+            neighbor_loader.insert(batch.src, batch.dst)
+            total_loss += float(loss) * batch.num_events
 
     return total_loss / test_data.num_events
