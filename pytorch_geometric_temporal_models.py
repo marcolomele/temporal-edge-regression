@@ -63,7 +63,7 @@ class MPNNLSTM(nn.Module):
         self,
         X: torch.FloatTensor,
         edge_index: torch.LongTensor,
-        edge_weight: torch.FloatTensor,
+        edge_weight: torch.FloatTensor = None,
     ) -> torch.FloatTensor:
         """
         Making a forward pass through the whole architecture.
@@ -501,7 +501,6 @@ class A3TGCN(torch.nn.Module):
     
 
 ### GATR ##
-
 from torch_geometric.nn import GATv2Conv
 from torch_geometric.nn import PositionalEncoding
 from torch_geometric.nn import BatchNorm
@@ -532,7 +531,7 @@ class GATEncoder(torch.nn.Module):
 
         self.dropout = torch.nn.Dropout(dropout_p)
 
-    def forward(self, x, edge_index, edge_attrs):
+    def forward(self, x, edge_index):
         """
         Forward pass of the GNNEncoder.
 
@@ -540,13 +539,13 @@ class GATEncoder(torch.nn.Module):
             x_dict (torch.Tensor): node types as keys and node features
                                    for each node as values.
             edge_index (torch.Tensor): see previous section.
-            edge_attrs (torch.Tensor): see previous section.
 
         Returns:
             torch.Tensor: Static node embeddings for one snapshot.
         """
         x = self.dropout(x)
-        nodes_embedds = self.encoder(x, edge_index, edge_attrs)
+        # nodes_embedds = self.encoder(x, edge_index, edge_attrs)
+        nodes_embedds = self.encoder(x, edge_index)
         nodes_embedds = F.leaky_relu(nodes_embedds, negative_slope=0.1)
         return nodes_embedds
     
