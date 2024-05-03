@@ -35,7 +35,7 @@ def generate_temporal_data(trade_df, feature_df):
         
         node_features_list = []
         for date in dates:
-                x = torch.tensor(feature_df[feature_df['date']==date]['value'].values, dtype=torch.float)
+                x = torch.tensor(feature_df[feature_df['date']==date]['value'].values, dtype=torch.float).unsqueeze(1)
                 node_features_list.append(x)
         
         node_features = {i:node_features_list[i] for i in range(len(dates))}
@@ -43,7 +43,7 @@ def generate_temporal_data(trade_df, feature_df):
         src = torch.tensor(df['src'].values, dtype=torch.long)
         trg = torch.tensor(df['dst'].values, dtype=torch.long)
         edge_weights = torch.tensor(df['amount'].values, dtype=torch.float32).unsqueeze(1)
-        msg = torch.ones_like(edge_weights).squeeze(1)
+        msg = torch.ones_like(edge_weights)
         
         df['date'] = df['date'].astype('datetime64[s]').astype('int')
         dates_mapping = {date: i for i, date in enumerate(df['date'].unique())}
