@@ -4,6 +4,7 @@ from statistics import mean
 from tqdm import tqdm
 import pandas as pd
 import torch
+import matplotlib.pyplot as plt
 
 ## Utils
 def data_split(graph_snapshots, split_ratio):
@@ -227,7 +228,7 @@ class ModelA3TGCN(torch.nn.Module):
         edge_weights_index = snapshot.edge_weights_index
 
         node_embeddings = self.encoder(x, edge_index)
-        print(node_embeddings)
+        # print(node_embeddings)
         edge_weights_pred = self.decoder(node_embeddings, edge_weights_index)
         
         return edge_weights_pred
@@ -261,12 +262,13 @@ class ModelGATR(torch.nn.Module):
         for snapshot in lagged_snapshots:
             x = snapshot.x
             edge_index = snapshot.edge_index
-            edge_attr = snapshot.edge_attr
-            edge_weights = snapshot.edge_weights
-            edge_attr = torch.cat((edge_attr, edge_weights), dim=1)
+            edge_attr = torch.zeros(edge_index.shape[1], dtype=torch.float)
+            #edge_weights = snapshot.edge_weights
+            #edge_attr = torch.cat((edge_attr, edge_weights), dim=1)
             edge_weights_index = snapshot.edge_weights_index
 
-            node_embeddings = self.encoder(x, edge_index, edge_attr)
+            # node_embeddings = self.encoder(x, edge_index, edge_attr)
+            node_embeddings = self.encoder(x, edge_index)
             static_embeddings_list.append(node_embeddings)
 
         lagged_static_embeddings = torch.stack(static_embeddings_list)
@@ -345,7 +347,8 @@ class TGNEncoder(torch.nn.Module):
         rel_t_enc = self.time_enc(rel_t.to(x.dtype))
         edge_attr = torch.cat([rel_t_enc, msg], dim=-1)
         x_with_features = torch.cat([node_features, x], dim=-1)
-        return self.conv(x_with_features, edge_index, edge_attr)
+        conv = self.conv(x_with_features, edge_index, edge_attr)
+        return conv
 
 class TGNDecoder(torch.nn.Module):
     def __init__(self, hidden_size):
@@ -363,7 +366,8 @@ class TGNDecoder(torch.nn.Module):
     
 def TGN_train(memory, encoder, decoder, neighbor_loader, 
               train_loader, node_features, edge_weights, 
-              optimizer, device, assoc, data, train_data):
+              optimizer, device, assoc, data, train_data,
+              epoch):
     memory.train()
     encoder.train()
     decoder.train()
