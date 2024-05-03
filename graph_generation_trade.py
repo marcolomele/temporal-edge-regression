@@ -20,7 +20,8 @@ def generate_dict_graph_snapshots(trade_df, feature_df):
         edge_weights = torch.tensor(df['amount'].values[:, None], dtype=torch.float)
         edge_weights_index = edge_index.detach().clone()
         
-        node_features = torch.tensor(feature_df[feature_df['date']==date]['value'].values, dtype=torch.float).unsqueeze(1)
+        node_features = torch.tensor(feature_df[feature_df['date']==date][['value_norm', 'month_sin', 'month_cos', 'quarter_sin', 'quarter_cos', 'season_sin', 'season_cos']].values, 
+                                     dtype=torch.float)
         
         graph = Data(x=node_features, edge_index=edge_index, edge_weights=edge_weights, 
                      edge_weights_index=edge_weights_index, num_nodes=num_nodes)
