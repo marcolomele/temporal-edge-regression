@@ -1,4 +1,4 @@
-# temporal-edge-regression
+# Temporal Edge Regression on Dynamics Graphs applied to Pandemic Mobility
 
 This repository provides a framework for temporal edge regression using advanced Graph Neural Network (GNN) architectures. The project focuses on predicting edge weights in dynamic graphs, with applications to both pandemic mobility data (Italy, Spain, France, England). The codebase includes data processing, graph generation, and several state-of-the-art GNN models for temporal edge prediction. This project was an experiment I did out of curiosity while writing my theoretical my thesis: Graph Neural Networks – From Foundations to Temporal Applications. 
 
